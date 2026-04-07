@@ -1,0 +1,141 @@
+@model Customer
+@{
+    ViewData["Title"] = "Thông tin cá nhân";
+    var provinces = ViewBag.Provinces as List<Province> ?? new();
+    var returnUrl = ViewBag.ReturnUrl as string;
+    var dn = (Model.CustomerName ?? "").Trim();
+    var initial = dn.Length > 0 ? dn[0].ToString().ToUpperInvariant() : "U";
+}
+
+<div class="shop-back-nav">
+    <a asp-controller="Home" asp-action="Index" class="shop-back-link shop-back-link--smart"><i class="bi bi-arrow-left"></i><span>Quay lại</span></a>
+</div>
+<div class="account-hero mb-4">
+    <div class="account-hero__row">
+        <div class="account-avatar">@initial</div>
+        <div class="flex-grow-1 min-w-0">
+            <h1 class="account-hero__name">@((string.IsNullOrWhiteSpace(dn) ? "Tài khoản của bạn" : dn))</h1>
+            <p class="account-hero__email">@Model.Email</p>
+        </div>
+        <div class="account-quick">
+            <a class="btn btn-shop-primary btn-sm px-3" asp-controller="Orders" asp-action="Index"><i class="bi bi-receipt me-1"></i>Đơn hàng</a>
+        </div>
+    </div>
+</div>
+
+@if (TempData["ProfileRequired"] is string profileMsg)
+{
+    <div class="alert alert-warning shop-alert d-flex align-items-start gap-2" role="alert">
+        <i class="bi bi-exclamation-triangle-fill flex-shrink-0 mt-1"></i>
+        <div>@profileMsg</div>
+    </div>
+}
+@if (ViewBag.ProfileIncomplete == true)
+{
+    <div class="alert alert-info shop-alert d-flex align-items-start gap-2" role="alert">
+        <i class="bi bi-info-circle flex-shrink-0 mt-1"></i>
+        <div>Hồ sơ chưa đủ để giao hàng. Vui lòng điền <strong>họ tên thật</strong>, số điện thoại, tỉnh/thành và địa chỉ.</div>
+    </div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="account-panel">
+            <div class="account-panel__head">
+                <i class="bi bi-person-badge text-primary"></i>
+                <span>Thông tin hồ sơ</span>
+            </div>
+            <div class="account-panel__body">
+                <form asp-action="Profile" method="post">
+                    @if (!string.IsNullOrEmpty(returnUrl))
+                    {
+                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                    }
+                    <input type="hidden" asp-for="CustomerID" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+
+                    <p class="profile-section-label">Đăng nhập</p>
+                    <div class="mb-4">
+                        <label asp-for="Email" class="form-label fw-semibold small"></label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text bg-light text-muted"><i class="bi bi-envelope"></i></span>
+                            <input asp-for="Email" class="form-control bg-light" readonly />
+                        </div>
+                        <div class="form-text">Email dùng đăng nhập — liên hệ cửa hàng nếu cần đổi.</div>
+                    </div>
+
+                    <p class="profile-section-label">Liên hệ &amp; giao hàng</p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="CustomerName" class="form-label fw-semibold small"></label>
+                            <input asp-for="CustomerName" class="form-control form-control-lg" />
+                            <span asp-validation-for="CustomerName" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="ContactName" class="form-label fw-semibold small"></label>
+                            <input asp-for="ContactName" class="form-control form-control-lg" />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Phone" class="form-label fw-semibold small"></label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-white text-muted"><i class="bi bi-telephone"></i></span>
+                                <input asp-for="Phone" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Province" class="form-label fw-semibold small"></label>
+                            <select asp-for="Province" class="form-select form-select-lg">
+                                <option value="">— Chọn tỉnh / thành —</option>
+                                @foreach (var p in provinces)
+                                {
+                                    var sel = Model.Province == p.ProvinceName;
+                                    if (sel)
+                                    {
+                                        <option value="@p.ProvinceName" selected>@p.ProvinceName</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@p.ProvinceName">@p.ProvinceName</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Address" class="form-label fw-semibold small"></label>
+                            <textarea asp-for="Address" class="form-control" rows="3" placeholder="Số nhà, đường, phường/xã…"></textarea>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 mt-4 pt-4 border-top">
+                        <button type="submit" class="btn btn-shop-primary btn-lg px-4"><i class="bi bi-save me-2"></i>Lưu thay đổi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="account-menu">
+            <div class="account-menu__head">Menu tài khoản</div>
+            <nav class="d-flex flex-column">
+                <a asp-controller="Orders" asp-action="Index" class="account-menu__item">
+                    <span class="account-menu__left"><i class="bi bi-receipt"></i><span>Đơn hàng của tôi</span></span>
+                    <i class="bi bi-chevron-right account-menu__chev"></i>
+                </a>
+                <a asp-controller="Cart" asp-action="Index" class="account-menu__item">
+                    <span class="account-menu__left"><i class="bi bi-cart3"></i><span>Giỏ hàng</span></span>
+                    <i class="bi bi-chevron-right account-menu__chev"></i>
+                </a>
+                <a asp-action="ChangePassword" class="account-menu__item">
+                    <span class="account-menu__left"><i class="bi bi-key"></i><span>Đổi mật khẩu</span></span>
+                    <i class="bi bi-chevron-right account-menu__chev"></i>
+                </a>
+                <a asp-controller="Account" asp-action="Logout" class="account-menu__item account-menu__danger">
+                    <span class="account-menu__left"><i class="bi bi-box-arrow-right"></i><span>Đăng xuất</span></span>
+                    <i class="bi bi-chevron-right account-menu__chev"></i>
+                </a>
+            </nav>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

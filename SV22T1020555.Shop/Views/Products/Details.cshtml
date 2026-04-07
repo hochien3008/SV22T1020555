@@ -1,0 +1,266 @@
+@model Product
+@{
+    ViewData["Title"] = Model.ProductName;
+    var attrs = ViewBag.Attributes as List<ProductAttribute> ?? new();
+    var photos = ViewBag.Photos as List<ProductPhoto> ?? new();
+    var related = ViewBag.RelatedProducts as List<Product> ?? new();
+}
+
+<div class="shop-back-nav">
+    <a asp-action="Index" class="shop-back-link"><i class="bi bi-arrow-left"></i><span>Quay lại</span></a>
+</div>
+<div class="shop-detail-head">
+    <nav class="breadcrumb-shop" aria-label="breadcrumb">
+        <a asp-controller="Home" asp-action="Index">Trang chủ</a>
+        <span class="text-muted"> / </span>
+        <a asp-action="Index">Mặt hàng</a>
+        <span class="text-muted"> / </span>
+        <span class="text-dark">@Model.ProductName</span>
+    </nav>
+    <div class="product-detail-head-card">
+        <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+            <div>
+                <h1 class="shop-detail-title mb-2">@Model.ProductName</h1>
+                <div class="product-detail-badges">
+                    <span class="product-detail-badge"><i class="bi bi-patch-check-fill"></i>Chính hãng</span>
+                    <span class="product-detail-badge"><i class="bi bi-truck"></i>Giao nhanh</span>
+                    <span class="product-detail-badge"><i class="bi bi-shield-check"></i>Đổi trả hỗ trợ</span>
+                </div>
+            </div>
+            <p class="d-flex align-items-baseline flex-wrap gap-2 mb-0">
+                <span class="price-tag product-detail-price-main">@Model.Price.ToString("N0") đ</span>
+                <span class="text-secondary fs-6">/ @Model.Unit</span>
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 g-xl-5 align-items-start">
+    <div class="col-lg-5 col-xl-5">
+        <div class="product-detail-media sticky-lg-top" style="top: 1rem;">
+            <button type="button" class="border-0 bg-transparent w-100 p-0" data-bs-toggle="modal" data-bs-target="#productImagePreviewModal" aria-label="Xem ảnh lớn">
+                <img id="mainProductImage"
+                     src="~/images/products/@ProductImage.FileName(Model.Photo)"
+                     data-default-src="@Url.Content($"~/images/products/{ProductImage.FileName(Model.Photo)}")"
+                     alt="@Model.ProductName"
+                     class="img-fluid d-block mx-auto product-detail-main-img" />
+            </button>
+            @if (photos.Any(x => !x.IsHidden))
+            {
+                <div class="d-flex justify-content-end mb-2">
+                    <button type="button" id="btnResetMainImage" class="btn btn-sm btn-outline-secondary rounded-pill px-3 d-none">
+                        <i class="bi bi-arrow-counterclockwise me-1"></i>Ảnh gốc
+                    </button>
+                </div>
+                <div class="product-detail-thumb-row">
+                    @foreach (var ph in photos.Where(x => !x.IsHidden))
+                    {
+                        <button type="button"
+                                class="border-0 bg-transparent p-0 js-product-thumb-btn"
+                                data-full-src="@Url.Content($"~/images/products/{ProductImage.FileName(ph.Photo)}")"
+                                aria-label="Chọn ảnh sản phẩm">
+                            <img src="~/images/products/@ProductImage.FileName(ph.Photo)" class="product-detail-thumb" alt="" />
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+    <div class="col-lg-7 col-xl-7">
+        <div class="product-detail-buy">
+            <div class="product-detail-buy__title">Đặt mua nhanh</div>
+            <form asp-controller="Cart" asp-action="Add" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="productId" value="@Model.ProductID" />
+                <input type="hidden" name="returnUrl" value="@($"{Context.Request.Path}{Context.Request.QueryString}")" />
+                <div class="d-flex align-items-end flex-wrap gap-3">
+                    <div>
+                        <label class="form-label small fw-semibold text-secondary mb-1">Số lượng</label>
+                        <input type="number" name="quantity" value="1" min="1" class="form-control form-control-lg" style="width: 7rem;" />
+                    </div>
+                    <div class="flex-grow-1 product-buy-actions">
+                        <button type="submit" name="buyNow" value="false" class="btn btn-shop-outline-primary">
+                            <i class="bi bi-cart-plus me-2"></i>Thêm vào giỏ
+                        </button>
+                        <button type="submit" name="buyNow" value="true" class="btn btn-shop-primary btn-lg">
+                            <i class="bi bi-bag-check me-2"></i>Mua ngay
+                        </button>
+                    </div>
+                </div>
+            </form>
+            <p class="small text-muted mb-0 mt-3 pt-2 border-top">
+                <i class="bi bi-info-circle me-1"></i>Giá theo niêm yết hiện tại; có thể chỉnh số lượng trong giỏ trước khi đặt mua.
+            </p>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.ProductDescription))
+        {
+            <div class="card card-shop mb-4 overflow-hidden mt-4">
+                <div class="card-header py-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-card-text text-primary"></i>
+                    <span class="fw-bold">Mô tả sản phẩm</span>
+                </div>
+                <div class="card-body">
+                    <div class="product-detail-desc mb-0">@Model.ProductDescription</div>
+                </div>
+            </div>
+        }
+
+        @if (attrs.Count > 0)
+        {
+            <div class="card card-shop overflow-hidden">
+                <div class="card-header py-3 d-flex align-items-center gap-2">
+                    <i class="bi bi-list-columns-reverse text-primary"></i>
+                    <span class="fw-bold">Thông số kỹ thuật</span>
+                </div>
+                <div class="card-body p-0">
+                    <dl class="row mb-0 small">
+                        @foreach (var a in attrs.OrderBy(x => x.DisplayOrder))
+                        {
+                            <dt class="col-sm-4 text-muted fw-semibold py-3 px-3 px-md-4 bg-light bg-opacity-50 border-bottom">@a.AttributeName</dt>
+                            <dd class="col-sm-8 py-3 px-3 px-md-4 mb-0 border-bottom">@a.AttributeValue</dd>
+                        }
+                    </dl>
+                </div>
+            </div>
+        }
+
+        <div class="card card-shop mt-4 overflow-hidden">
+            <div class="card-header py-3 d-flex align-items-center gap-2">
+                <i class="bi bi-shield-check text-primary"></i>
+                <span class="fw-bold">Chính sách & dịch vụ</span>
+            </div>
+            <div class="card-body product-detail-service">
+                <div class="service-item">
+                    <i class="bi bi-truck"></i>
+                    <div>
+                        <div class="service-item__title">Vận chuyển nhanh toàn quốc</div>
+                        <div class="service-item__text">Đơn được xử lý sớm, cập nhật trạng thái theo từng bước trong mục đơn hàng.</div>
+                    </div>
+                </div>
+                <div class="service-item">
+                    <i class="bi bi-arrow-repeat"></i>
+                    <div>
+                        <div class="service-item__title">Hỗ trợ đổi/trả linh hoạt</div>
+                        <div class="service-item__text">Nếu sản phẩm lỗi hoặc không đúng mô tả, bạn có thể liên hệ shop để được hỗ trợ nhanh.</div>
+                    </div>
+                </div>
+                <div class="service-item">
+                    <i class="bi bi-chat-dots"></i>
+                    <div>
+                        <div class="service-item__title">Tư vấn trước khi mua</div>
+                        <div class="service-item__text">Để lại đơn với số lượng phù hợp, shop sẽ hỗ trợ xác nhận và giao theo thông tin bạn cung cấp.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="product-detail-extra mt-4">
+    <div class="card card-shop overflow-hidden">
+        <div class="card-header py-3 d-flex align-items-center gap-2">
+            <i class="bi bi-patch-question text-primary"></i>
+            <span class="fw-bold">Thông tin thêm</span>
+        </div>
+        <div class="card-body">
+            <div class="faq-grid">
+                <article class="faq-item">
+                    <h3>Còn hàng hay không?</h3>
+                    <p>Trang chỉ hiển thị các mặt hàng đang bán. Bạn có thể đặt mua ngay hoặc thêm vào giỏ.</p>
+                </article>
+                <article class="faq-item">
+                    <h3>Thanh toán và xác nhận đơn</h3>
+                    <p>Sau khi đặt hàng, hệ thống ghi nhận đơn và bạn theo dõi trạng thái xử lý tại mục Đơn hàng của tôi.</p>
+                </article>
+                <article class="faq-item">
+                    <h3>Thay đổi địa chỉ nhận hàng</h3>
+                    <p>Bạn có thể đổi số điện thoại và địa chỉ trong chi tiết đơn trước khi đơn chuyển sang trạng thái giao hàng.</p>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+
+@if (related.Count > 0)
+{
+    <section class="product-detail-extra mt-4">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h2 class="h5 fw-bold mb-0">Sản phẩm liên quan</h2>
+            <a asp-action="Index" class="small fw-semibold text-decoration-none">Xem thêm <i class="bi bi-chevron-right"></i></a>
+        </div>
+        <div class="row g-3 g-md-4">
+            @foreach (var p in related)
+            {
+                <div class="col-6 col-md-4 col-xl-2">
+                    <article class="card product-card product-card--market h-100">
+                        <a asp-action="Details" asp-route-id="@p.ProductID" class="product-img-wrap text-center">
+                            <img src="~/images/products/@ProductImage.FileName(p.Photo)" alt="@p.ProductName" />
+                        </a>
+                        <div class="card-body d-flex flex-column">
+                            <a asp-action="Details" asp-route-id="@p.ProductID" class="product-title stretched-link">@p.ProductName</a>
+                            <p class="price-tag mb-0">@p.Price.ToString("N0") đ <span class="unit">/ @p.Unit</span></p>
+                        </div>
+                    </article>
+                </div>
+            }
+        </div>
+    </section>
+}
+
+<div class="modal fade" id="productImagePreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content border-0 bg-transparent shadow-none">
+            <div class="modal-body p-0 text-center">
+                <img id="productImagePreviewLarge" src="~/images/products/@ProductImage.FileName(Model.Photo)" alt="@Model.ProductName" class="img-fluid rounded-3" />
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var main = document.getElementById("mainProductImage");
+            var large = document.getElementById("productImagePreviewLarge");
+            var resetBtn = document.getElementById("btnResetMainImage");
+            if (!main) return;
+            var defaultSrc = main.getAttribute("data-default-src") || "";
+
+            function syncResetButton() {
+                if (!resetBtn || !defaultSrc) return;
+                var normalize = function (u) {
+                    try { return new URL(u, window.location.href).href; } catch { return u || ""; }
+                };
+                var isDefault = normalize(main.src) === normalize(defaultSrc);
+                resetBtn.classList.toggle("d-none", isDefault);
+            }
+
+            document.querySelectorAll(".js-product-thumb-btn").forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    var src = btn.getAttribute("data-full-src");
+                    if (!src) return;
+                    main.src = src;
+                    if (large) large.src = src;
+                    syncResetButton();
+                });
+            });
+
+            if (resetBtn) {
+                resetBtn.addEventListener("click", function () {
+                    if (!defaultSrc) return;
+                    main.src = defaultSrc;
+                    if (large) large.src = defaultSrc;
+                    syncResetButton();
+                });
+            }
+
+            main.addEventListener("load", function () {
+                if (large) large.src = main.src;
+                syncResetButton();
+            });
+
+            syncResetButton();
+        })();
+    </script>
+}

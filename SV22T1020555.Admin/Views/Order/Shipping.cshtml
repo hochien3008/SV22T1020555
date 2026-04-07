@@ -1,0 +1,31 @@
+@model SV22T1020555.Admin.Models.OrderShippingFormModel
+@{
+    Layout = null;
+}
+<form asp-controller="Order" asp-action="Shipping" asp-route-id="@Model.OrderID" method="post">
+    @Html.AntiForgeryToken()
+    <div class="modal-header text-bg-info">
+        <strong class="modal-title">Chọn người giao hàng</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+        <div class="row">
+            <div class="col-12">
+                <label class="form-label">Người giao hàng</label>
+                <select name="shipperID" class="form-select" required>
+                    <option value="">-- Chọn người giao hàng --</option>
+                    @foreach (var s in Model.Shippers)
+                    {
+                        <option value="@s.ShipperID">@s.ShipperName</option>
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-bicycle"></i> Giao hàng
+        </button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+    </div>
+</form>

@@ -1,0 +1,80 @@
+@model RegisterViewModel
+@{
+    ViewData["Title"] = "Đăng ký";
+}
+
+<div class="shop-auth-shell">
+    <div class="shop-back-nav shop-back-nav--auth">
+        <a asp-controller="Home" asp-action="Index" class="shop-back-link shop-back-link--smart"><i class="bi bi-arrow-left"></i><span>Quay lại</span></a>
+    </div>
+    <div class="row shop-auth-page g-4 g-lg-5 align-items-stretch">
+        <div class="col-lg-5 d-none d-lg-flex shop-auth-aside">
+            <div>
+                <p class="shop-auth-aside__eyebrow">Tài khoản</p>
+                <h2>Tạo tài khoản SV Shop</h2>
+                <p>Chỉ cần vài phút — sau đó bổ sung hồ sơ để đặt hàng và nhận hàng tận nơi.</p>
+                <ul>
+                    <li>Đăng ký nhanh bằng email</li>
+                    <li>Bổ sung họ tên &amp; địa chỉ khi tiện</li>
+                    <li>Thông tin được mã hóa an toàn</li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-7 col-xl-6 mx-auto ms-lg-0">
+            <div class="auth-panel-intro text-center text-lg-start">
+                <div class="auth-icon-stack mb-3">
+                    <i class="bi bi-person-plus"></i>
+                </div>
+                <p class="auth-panel-kicker mb-0"><i class="bi bi-lightning-charge-fill"></i> Chỉ 1 phút</p>
+                <h1 class="auth-panel-title">Tạo tài khoản</h1>
+                <p class="auth-panel-lead">Email và mật khẩu — vào Hồ sơ để thêm họ tên, điện thoại và địa chỉ trước khi đặt hàng.</p>
+            </div>
+            <div class="card auth-card-accent card-shop">
+                <div class="card-header py-3 d-flex align-items-center gap-2 border-0">
+                    <i class="bi bi-stars text-primary"></i>
+                    <span>Đăng ký nhanh</span>
+                </div>
+                <div class="card-body pt-0">
+                    <form asp-action="Register" method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+                        <div class="mb-3 auth-field">
+                            <label asp-for="Email" class="form-label fw-semibold small"></label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text text-muted"><i class="bi bi-envelope"></i></span>
+                                <input asp-for="Email" class="form-control" autocomplete="email" placeholder="you@email.com" />
+                            </div>
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3 auth-field">
+                            <label asp-for="Password" class="form-label fw-semibold small"></label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text text-muted"><i class="bi bi-lock"></i></span>
+                                <input asp-for="Password" class="form-control" autocomplete="new-password" placeholder="Tối thiểu 6 ký tự" />
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-4 auth-field">
+                            <label asp-for="ConfirmPassword" class="form-label fw-semibold small"></label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text text-muted"><i class="bi bi-lock-fill"></i></span>
+                                <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" placeholder="Nhập lại mật khẩu" />
+                            </div>
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        </div>
+                        <button type="submit" class="btn btn-shop-primary btn-lg w-100 py-2 fw-bold rounded-3"><i class="bi bi-check2-circle me-2"></i>Đăng ký</button>
+                        <div class="auth-trust-row">
+                            <span><i class="bi bi-patch-check"></i> Không cần thẻ</span>
+                            <span><i class="bi bi-envelope-check"></i> Xác nhận qua email</span>
+                        </div>
+                        <p class="mt-4 mb-0 text-center small text-secondary">
+                            Đã có tài khoản? <a asp-action="Login" class="auth-footer-link text-decoration-none">Đăng nhập</a>
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

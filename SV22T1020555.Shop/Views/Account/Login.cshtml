@@ -1,0 +1,73 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Đăng nhập";
+}
+
+<div class="shop-auth-shell">
+    <div class="shop-back-nav shop-back-nav--auth">
+        <a asp-controller="Home" asp-action="Index" class="shop-back-link shop-back-link--smart"><i class="bi bi-arrow-left"></i><span>Quay lại</span></a>
+    </div>
+    <div class="row shop-auth-page g-4 g-lg-5 align-items-stretch">
+        <div class="col-lg-5 d-none d-lg-flex shop-auth-aside">
+            <div>
+                <p class="shop-auth-aside__eyebrow">SV Shop</p>
+                <h2>Chào mừng trở lại</h2>
+                <p>Đăng nhập để theo dõi đơn hàng, quản lý giỏ và cập nhật hồ sơ giao hàng.</p>
+                <ul>
+                    <li>Theo dõi trạng thái đơn mọi lúc</li>
+                    <li>Thanh toán nhanh với thông tin đã lưu</li>
+                    <li>Bảo mật tài khoản bằng mật khẩu của bạn</li>
+                </ul>
+            </div>
+        </div>
+        <div class="col-lg-7 col-xl-6 mx-auto ms-lg-0">
+            <div class="auth-panel-intro text-center text-lg-start">
+                <div class="auth-icon-stack mb-3">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+                <p class="auth-panel-kicker mb-0"><i class="bi bi-bag-heart-fill"></i> SV Shop</p>
+                <h1 class="auth-panel-title">Đăng nhập</h1>
+                <p class="auth-panel-lead">Dùng email đã đăng ký để vào tài khoản.</p>
+            </div>
+            <div class="card auth-card-accent card-shop">
+                <div class="card-body">
+                    <form asp-action="Login" method="post">
+                        <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+                        <div class="mb-3 auth-field">
+                            <label asp-for="Email" class="form-label fw-semibold small"></label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text text-muted"><i class="bi bi-envelope"></i></span>
+                                <input asp-for="Email" class="form-control" autocomplete="username" placeholder="you@email.com" />
+                            </div>
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-3 auth-field">
+                            <label asp-for="Password" class="form-label fw-semibold small"></label>
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text text-muted"><i class="bi bi-lock"></i></span>
+                                <input asp-for="Password" class="form-control" autocomplete="current-password" placeholder="••••••••" />
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+                        <div class="mb-4 form-check">
+                            <input asp-for="RememberMe" class="form-check-input" />
+                            <label asp-for="RememberMe" class="form-check-label small"></label>
+                        </div>
+                        <button type="submit" class="btn btn-shop-primary btn-lg w-100 py-2 fw-bold rounded-3">Đăng nhập</button>
+                        <div class="auth-trust-row">
+                            <span><i class="bi bi-shield-check"></i> Kết nối an toàn</span>
+                            <span><i class="bi bi-truck"></i> Giao hàng tiện lợi</span>
+                        </div>
+                        <p class="mt-4 mb-0 text-center small text-secondary">
+                            Chưa có tài khoản? <a asp-action="Register" class="auth-footer-link text-decoration-none">Đăng ký ngay</a>
+                        </p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

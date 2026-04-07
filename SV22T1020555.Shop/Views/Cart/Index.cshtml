@@ -1,0 +1,212 @@
+@model List<OrderDetailViewInfo>
+@{
+    ViewData["Title"] = "Giỏ hàng";
+    decimal total = Model.Sum(x => x.Quantity * x.SalePrice);
+    int totalCount = Model.Sum(x => x.Quantity);
+}
+
+<div class="shop-back-nav">
+    <a asp-controller="Products" asp-action="Index" class="shop-back-link shop-back-link--smart"><i class="bi bi-arrow-left"></i><span>Quay lại</span></a>
+</div>
+<div class="shop-page-header">
+    <nav class="breadcrumb-shop mb-2" aria-label="breadcrumb">
+        <a asp-controller="Home" asp-action="Index">Trang chủ</a>
+        <span class="text-muted"> / </span>
+        <span class="text-dark">Giỏ hàng</span>
+    </nav>
+    <h1 class="h1-line">Giỏ hàng của bạn</h1>
+    <p class="lead-sub mb-0">Kiểm tra sản phẩm và số lượng trước khi đặt mua.</p>
+</div>
+
+<div id="cartContent">
+@if (Model.Count == 0)
+{
+    <div class="card card-shop shop-empty shop-empty--cart">
+        <i class="bi bi-cart-x d-block mb-3"></i>
+        <p class="mb-2 fs-5 fw-semibold text-dark">Giỏ hàng đang trống</p>
+        <p class="text-secondary mb-4 small">Khám phá danh mục mặt hàng và thêm sản phẩm yêu thích.</p>
+        <a class="btn btn-shop-primary btn-lg px-4" asp-controller="Products" asp-action="Index"><i class="bi bi-bag-heart me-2"></i>Tiếp tục mua sắm</a>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="cart-lines">
+                @foreach (var line in Model)
+                {
+                    <article class="cart-line-card" id="cart-item-@line.ProductID">
+                        <img src="~/images/products/@ProductImage.FileName(line.Photo)" alt="" class="cart-line-card__thumb" width="88" height="88" />
+                        <div class="cart-line-card__body">
+                            <h2 class="cart-line-card__title">@line.ProductName</h2>
+                            <div class="cart-line-card__price">@line.SalePrice.ToString("N0") đ <span class="text-muted">/ sản phẩm</span></div>
+                            <div class="cart-line-card__qty">
+                                <form asp-action="Update" method="post" class="d-flex align-items-center gap-2 flex-wrap js-cart-auto-update">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="productId" value="@line.ProductID" />
+                                    <label class="small text-muted mb-0">SL</label>
+                                    <input type="number" name="quantity" value="@line.Quantity" min="1" class="form-control form-control-sm js-cart-qty" data-product-id="@line.ProductID" style="width: 4.5rem;" />
+                                </form>
+                            </div>
+                            <div class="cart-line-card__total ms-md-auto" id="line-total-@line.ProductID">@((line.Quantity * line.SalePrice).ToString("N0")) đ</div>
+                            <div class="cart-line-card__remove">
+                                <form asp-action="Remove" asp-route-productId="@line.ProductID" method="post" class="d-inline js-cart-remove" data-product-id="@line.ProductID" data-product-name="@line.ProductName">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-link text-danger" title="Xóa"><i class="bi bi-trash me-1"></i>Xóa</button>
+                                </form>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+            <div class="cart-toolbar">
+                <form id="formClearCart" asp-action="Clear" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="button" class="btn btn-outline-secondary" onclick="confirmClearCart()"><i class="bi bi-trash3 me-2"></i>Xóa toàn bộ giỏ</button>
+                </form>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card cart-summary-card position-sticky" style="top: 1rem;">
+                <div class="card-header">
+                    <i class="bi bi-receipt me-2"></i>Tóm tắt đơn
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2 text-secondary small">
+                        <span>Tạm tính (<span class="js-cart-summary-count">@totalCount</span> sản phẩm)</span>
+                        <span class="text-dark fw-semibold js-cart-total">@total.ToString("N0") đ</span>
+                    </div>
+                    <hr class="my-3" />
+                    <div class="d-flex justify-content-between align-items-baseline">
+                        <span class="fw-bold fs-5">Tổng cộng</span>
+                        <span class="price-tag fs-3 js-cart-total">@total.ToString("N0") đ</span>
+                    </div>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <a class="btn btn-shop-success btn-lg w-100 mt-4 py-3 fw-semibold" asp-controller="Checkout" asp-action="Index">
+                            <i class="bi bi-truck me-2"></i>Tiến hành đặt mua
+                        </a>
+                    }
+                    else
+                    {
+                        <a class="btn btn-shop-success btn-lg w-100 mt-4 py-3 fw-semibold" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Url.Action("Index", "Checkout")">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Đăng nhập để đặt mua
+                        </a>
+                    }
+                    <a class="btn btn-outline-secondary w-100 mt-2" asp-controller="Products" asp-action="Index"><i class="bi bi-plus-lg me-2"></i>Thêm mặt hàng khác</a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+</div>
+
+@section Scripts {
+    <script>
+        function confirmClearCart() {
+            Swal.fire({
+                title: 'Xóa toàn bộ?',
+                text: "Bạn có chắc chắn muốn làm rỗng giỏ hàng này?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#e63946',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Có, xóa hết!',
+                cancelButtonText: 'Hủy bỏ',
+                customClass: {
+                    popup: 'rounded-4 shadow-lg',
+                    confirmButton: 'rounded-pill px-4',
+                    cancelButton: 'rounded-pill px-4'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('formClearCart').submit();
+                }
+            })
+        }
+
+        $(document).ready(function() {
+            // Xử lý tự động cập nhật số lượng qua AJAX
+            let timerId = null;
+            $(document).on("input", ".js-cart-qty", function() {
+                const $input = $(this);
+                if (timerId) clearTimeout(timerId);
+                timerId = setTimeout(() => updateCartQuantity($input), 400);
+            });
+
+            $(document).on("change", ".js-cart-qty", function() {
+                updateCartQuantity($(this));
+            });
+
+            function updateCartQuantity($input) {
+                const productId = $input.data("product-id");
+                let quantity = parseInt($input.val() || "0", 10);
+                
+                if (isNaN(quantity) || quantity < 1) {
+                    quantity = 1;
+                    $input.val(1);
+                }
+
+                const $form = $input.closest("form");
+                const url = $form.attr("action");
+                const token = $form.find("input[name='__RequestVerificationToken']").val();
+
+                $.post(url, { productId: productId, quantity: quantity, __RequestVerificationToken: token }, function(res) {
+                    if (res.success) {
+                        $("#line-total-" + productId).text(res.lineTotal);
+                        $(".js-cart-total").text(res.cartTotal);
+                        $(".js-cart-summary-count").text(res.cartCount);
+                        $(".icon-badge").text(res.cartCount);
+                    } else {
+                        Swal.fire('Lỗi!', res.message || "Cập nhật thất bại.", 'error');
+                        location.reload();
+                    }
+                });
+            }
+
+            // Xử lý xóa sản phẩm qua AJAX với SweetAlert2
+            $(document).on("submit", ".js-cart-remove", function(e) {
+                e.preventDefault();
+                const $form = $(this);
+                const pName = $form.data("product-name");
+
+                Swal.fire({
+                    title: 'Xóa mặt hàng?',
+                    html: `Bạn muốn xóa <b>${pName}</b> khỏi giỏ?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#e63946',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Đồng ý xóa',
+                    cancelButtonText: 'Hủy',
+                    customClass: {
+                        popup: 'rounded-4',
+                        confirmButton: 'rounded-pill px-4',
+                        cancelButton: 'rounded-pill px-4'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const productId = $form.data("product-id");
+                        const url = $form.attr("action");
+                        const token = $form.find("input[name='__RequestVerificationToken']").val();
+
+                        $.post(url, { productId: productId, __RequestVerificationToken: token }, function(res) {
+                            if (res.success) {
+                                if (res.isEmpty) {
+                                    location.reload();
+                                } else {
+                                    $("#cart-item-" + productId).fadeOut(350, function() {
+                                        $(this).remove();
+                                        $(".js-cart-total").text(res.cartTotal);
+                                        $(".js-cart-summary-count").text(res.cartCount);
+                                        $(".icon-badge").text(res.cartCount);
+                                    });
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+}

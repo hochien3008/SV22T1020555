@@ -1,0 +1,124 @@
+@model ProductSearchInput
+@{
+    ViewData["Title"] = "Danh mục mặt hàng";
+    var categories = ViewBag.Categories as List<Category> ?? new();
+}
+
+<div class="shop-back-nav">
+    <a asp-controller="Home" asp-action="Index" class="shop-back-link shop-back-link--smart"><i class="bi bi-arrow-left"></i><span>Quay lại</span></a>
+</div>
+<div class="shop-catalog-intro">
+    <div>
+        <nav class="breadcrumb-shop mb-2" aria-label="breadcrumb">
+            <a asp-controller="Home" asp-action="Index">Trang chủ</a>
+            <span class="text-muted"> / </span>
+            <span class="text-dark">Mặt hàng</span>
+        </nav>
+        <h1 class="h1-line mb-2">Danh mục mặt hàng</h1>
+        <p class="lead-sub mb-0">Lọc theo loại, tên hoặc khoảng giá — chỉ hiển thị sản phẩm đang bán.</p>
+    </div>
+</div>
+
+<div class="shop-filter-card">
+    <div class="shop-filter-card__head">
+        <i class="bi bi-sliders2 text-primary fs-5"></i>
+        Bộ lọc tìm kiếm
+    </div>
+    <div class="shop-filter-card__body">
+        <form id="formSearch" method="get" action="~/Products/Search" onsubmit="return doSearch(1)" class="row g-3 g-lg-4 align-items-end">
+            <div class="col-md-6 col-lg-3">
+                <label class="form-label">Loại hàng</label>
+                <select name="CategoryID" class="form-select form-select-lg" onchange="doSearch(1)">
+                    <option value="0">Tất cả danh mục</option>
+                    @foreach (var c in categories)
+                    {
+                        if (Model.CategoryID == c.CategoryID)
+                        {
+                            <option value="@c.CategoryID" selected>@c.CategoryName</option>
+                        }
+                        else
+                        {
+                            <option value="@c.CategoryID">@c.CategoryName</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <label class="form-label">Tên hàng</label>
+                <div class="input-group input-group-lg">
+                    <span class="input-group-text bg-white text-muted"><i class="bi bi-search"></i></span>
+                    <input name="SearchValue" value="@Model.SearchValue" class="form-control" placeholder="Nhập từ khóa…" />
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <label class="form-label">Giá từ</label>
+                <div class="input-group input-group-lg">
+                    <input type="number" step="1" name="MinPrice" value="@(Model.MinPrice > 0 ? Model.MinPrice : null)" class="form-control" placeholder="0" />
+                    <span class="input-group-text bg-white text-muted small">đ</span>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <label class="form-label">Đến</label>
+                <div class="input-group input-group-lg">
+                    <input type="number" step="1" name="MaxPrice" value="@(Model.MaxPrice > 0 ? Model.MaxPrice : null)" class="form-control" placeholder="∞" />
+                    <span class="input-group-text bg-white text-muted small">đ</span>
+                </div>
+            </div>
+            <div class="col-md-4 col-lg-2">
+                <input type="hidden" name="PageSize" value="@Model.PageSize" />
+                <input type="hidden" name="Page" id="txtPage" value="@Model.Page" />
+                <button type="submit" class="btn btn-shop-primary btn-lg w-100"><i class="bi bi-funnel me-2"></i>Áp dụng</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="searchResult">
+    <!-- AJAX Content goes here -->
+    <div class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function doSearch(page) {
+            $("#txtPage").val(page);
+            var searchTarget = "#searchResult";
+            var searchForm = "#formSearch";
+            
+            var url = $(searchForm).prop("action");
+            var method = $(searchForm).prop("method");
+            var data = $(searchForm).serializeArray();
+            
+            $.ajax({
+                url: url,
+                type: method,
+                data: data,
+                error: function() {
+                    alert("Your request could not be completed.");
+                },
+                success: function(response) {
+                    $(searchTarget).html(response);
+                }
+            });
+            
+            return false;
+        }
+
+        function resetSearch() {
+            var form = document.getElementById("formSearch");
+            form.CategoryID.value = 0;
+            form.SearchValue.value = "";
+            form.MinPrice.value = "";
+            form.MaxPrice.value = "";
+            doSearch(1);
+        }
+
+        $(document).ready(function() {
+            doSearch(@Model.Page);
+        });
+    </script>
+}

@@ -1,0 +1,102 @@
+@model PagedResult<Product>
+@{
+    ViewData["Title"] = "Trang chủ";
+    var categories = ViewBag.Categories as List<Category> ?? new();
+    // Hero images (local PNG — ảnh banner chất lượng cao, đồng bộ tông shop)
+    var heroImg = Url.Content("~/images/banners/hero-main.png");
+    var mini1 = Url.Content("~/images/banners/hero-mini-1.png");
+    var mini2 = Url.Content("~/images/banners/hero-mini-2.png");
+}
+<section class="home-cat-strip" aria-label="Danh mục nhanh">
+    <div class="cat-scroll">
+        <a class="cat-pill" asp-controller="Products" asp-action="Index" asp-route-CategoryID="0">
+            <span class="cat-ico"><i class="bi bi-grid"></i></span>
+            <span>
+                <div class="cat-pill-title">Tất cả</div>
+                <div class="cat-pill-sub">Khám phá danh mục</div>
+            </span>
+        </a>
+        @foreach (var c in categories)
+        {
+            <a class="cat-pill" asp-controller="Products" asp-action="Index" asp-route-CategoryID="@c.CategoryID">
+                <span class="cat-ico"><i class="bi bi-bag"></i></span>
+                <span>
+                    <div class="cat-pill-title">@c.CategoryName</div>
+                    <div class="cat-pill-sub">Xem sản phẩm</div>
+                </span>
+            </a>
+        }
+    </div>
+</section>
+
+<section class="home-hero-grid" aria-label="Khuyến mãi nổi bật">
+    <article class="hero-card">
+        <img class="hero-card__img" src="@heroImg" alt="Fresh deals" />
+        <div class="hero-card__bg" aria-hidden="true"></div>
+        <div class="hero-card__content">
+            <span class="hero-badge"><i class="bi bi-lightning-charge-fill"></i>Fresh Deals</span>
+            <h1 class="hero-title">Mua sắm mỗi ngày — giá tốt, giao nhanh</h1>
+            <p class="hero-lead">Tìm theo danh mục, so sánh giá rõ ràng và đặt hàng chỉ trong vài bước.</p>
+            <div class="hero-actions">
+                <a class="btn btn-hero btn-hero-primary" asp-controller="Products" asp-action="Index"><i class="bi bi-search me-2"></i>Mua ngay</a>
+                <a class="btn btn-hero btn-hero-soft" asp-controller="Products" asp-action="Index"><i class="bi bi-tags me-2"></i>Ưu đãi hôm nay</a>
+            </div>
+        </div>
+    </article>
+    <div class="hero-side">
+        <article class="mini-banner">
+            <div class="mini-banner__content">
+                <h3 class="mini-banner__title">Deal nhanh</h3>
+                <p class="mini-banner__sub">Sản phẩm hot trong tuần</p>
+                <a class="btn btn-sm btn-shop-primary mt-2" asp-controller="Products" asp-action="Index">Xem ngay</a>
+            </div>
+            <img class="mini-banner__img" src="@mini1" alt="Ưu đãi nhanh" loading="lazy" />
+        </article>
+        <article class="mini-banner">
+            <div class="mini-banner__content">
+                <h3 class="mini-banner__title">Combo tiết kiệm</h3>
+                <p class="mini-banner__sub">Mua nhiều, lợi hơn</p>
+                <a class="btn btn-sm btn-shop-primary mt-2" asp-controller="Products" asp-action="Index">Khám phá</a>
+            </div>
+            <img class="mini-banner__img" src="@mini2" alt="Combo tiết kiệm" loading="lazy" />
+        </article>
+    </div>
+</section>
+
+<section class="shop-section shop-section--products">
+    <div class="shop-page-header d-flex flex-wrap align-items-end justify-content-between gap-3 mb-4 mb-lg-5">
+        <div>
+            <h2 class="h1-line mb-2">Featured Products</h2>
+            <p class="lead-sub mb-0">Gợi ý dành cho bạn — chọn xem chi tiết và đặt mua.</p>
+        </div>
+        <a class="btn btn-shop-primary btn-lg px-4" asp-controller="Products" asp-action="Index">Xem tất cả <i class="bi bi-arrow-right ms-2"></i></a>
+    </div>
+
+    <div class="row g-4 g-lg-4">
+        @foreach (var p in Model.DataItems)
+        {
+            <div class="col-6 col-md-4 col-xl-3 col-xxl-2">
+                <article class="card product-card product-card--market h-100">
+                    <a asp-controller="Products" asp-action="Details" asp-route-id="@p.ProductID" class="product-img-wrap text-center">
+                        <span class="product-badge"><i class="bi bi-lightning-charge-fill"></i>Hot</span>
+                        <img src="~/images/products/@ProductImage.FileName(p.Photo)" alt="@p.ProductName" />
+                    </a>
+                    <div class="card-body d-flex flex-column">
+                        <a asp-controller="Products" asp-action="Details" asp-route-id="@p.ProductID" class="product-title stretched-link">
+                            @p.ProductName
+                        </a>
+                        <div class="product-meta-row">
+                            <p class="price-tag mb-0">@p.Price.ToString("N0") đ</p>
+                        </div>
+                        <div class="product-meta-row">
+                            <span class="product-rating" title="Đánh giá">
+                                <i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i>
+                            </span>
+                            <span class="product-sold">Đã bán 1k+</span>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        }
+    </div>
+</section>

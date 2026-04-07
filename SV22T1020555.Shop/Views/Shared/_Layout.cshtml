@@ -1,0 +1,208 @@
+@{
+    var isAuth = User?.Identity?.IsAuthenticated == true;
+    string? Fn(string t) => User?.FindFirst(t)?.Value;
+    var display = Fn("DisplayName") ?? Fn("UserName");
+    var displayInitial = !string.IsNullOrWhiteSpace(display) ? display.Trim()[0].ToString().ToUpperInvariant() : "?";
+    var cartCount = ShopCartHelper.GetCart().Sum(x => x.Quantity);
+    var navCategories = (await CatalogDataService.ListCategoriesAsync(new PaginationSearchInput
+    {
+        Page = 1,
+        PageSize = 8,
+        SearchValue = ""
+    })).DataItems ?? new List<Category>();
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] · SV Shop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="d-flex flex-column min-vh-100">
+    <header class="shop-header">
+        <div class="shop-topbar">
+            <div class="container-fluid shop-shell">
+                <div class="shop-topbar__row">
+                    <a class="shop-logo d-flex align-items-center gap-2 text-decoration-none" asp-controller="Home" asp-action="Index">
+                        <span class="shop-logo__mark"><i class="bi bi-bag-heart-fill"></i></span>
+                        <span class="shop-logo__text">SV Shop</span>
+                    </a>
+
+                    <div class="dropdown d-none d-lg-block">
+                        <button class="btn nav-cat-btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-grid-3x3-gap me-2"></i>All Categories
+                        </button>
+                        <ul class="dropdown-menu nav-cat-menu">
+                            <li><a class="dropdown-item" asp-controller="Products" asp-action="Index" asp-route-CategoryID="0">Tất cả danh mục</a></li>
+                            <li><hr class="dropdown-divider" /></li>
+                            @foreach (var c in navCategories)
+                            {
+                                <li><a class="dropdown-item" asp-controller="Products" asp-action="Index" asp-route-CategoryID="@c.CategoryID">@c.CategoryName</a></li>
+                            }
+                        </ul>
+                    </div>
+
+                    <form class="shop-search" method="get" asp-controller="Products" asp-action="Index" role="search">
+                        <div class="input-group">
+                            <input name="SearchValue" class="form-control" placeholder="Type your products..." aria-label="Search products" />
+                            <button class="btn btn-search" type="submit">
+                                Search <i class="bi bi-search ms-1"></i>
+                            </button>
+                        </div>
+                    </form>
+
+                    <div class="shop-icons ms-auto">
+                        @if (isAuth)
+                        {
+                            <a class="account-pill d-none d-lg-inline-flex" asp-controller="Account" asp-action="Profile" title="@display">
+                                <span class="account-pill__avatar">@displayInitial</span>
+                                <span class="account-pill__name">@display</span>
+                                <i class="bi bi-chevron-down account-pill__chev"></i>
+                            </a>
+                        }
+                        else
+                        {
+                            <a class="icon-btn d-none d-lg-inline-flex" asp-controller="Account" asp-action="Login" title="Đăng nhập">
+                                <i class="bi bi-person"></i>
+                            </a>
+                        }
+                        <a class="icon-btn" asp-controller="Orders" asp-action="Index" title="Đơn hàng">
+                            <i class="bi bi-receipt"></i>
+                        </a>
+                        <a class="icon-btn icon-cart" asp-controller="Cart" asp-action="Index" title="Giỏ hàng">
+                            <i class="bi bi-cart3"></i>
+                            <span class="icon-badge @(cartCount <= 0 ? "d-none" : "")">@cartCount</span>
+                        </a>
+
+                        <button class="btn icon-btn d-lg-none" type="button" data-bs-toggle="collapse" data-bs-target="#shopSubNav" aria-controls="shopSubNav" aria-expanded="false" aria-label="Menu">
+                            <i class="bi bi-list"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="shop-subnav">
+            <div class="container-fluid shop-shell">
+                <div class="collapse d-lg-block" id="shopSubNav">
+                    <div class="shop-subnav__row">
+                        <ul class="subnav-links">
+                            <li><a class="subnav-link" asp-controller="Home" asp-action="Index">Home</a></li>
+                            <li><a class="subnav-link" asp-controller="Products" asp-action="Index">Shop</a></li>
+                        </ul>
+
+                        <div class="subnav-right ms-auto">
+                            <span class="subnav-pill"><i class="bi bi-calendar2-week me-1"></i>Weekly Discount!</span>
+                            <span class="hotline-pill">
+                                <i class="bi bi-telephone-fill me-2"></i>
+                                Hotline Number <strong class="ms-1">+84 0900 000 000</strong>
+                            </span>
+                            @if (isAuth)
+                            {
+                            }
+                            else
+                            {
+                                <a class="btn btn-sm btn-light ms-2 fw-bold rounded-pill px-3" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container-fluid shop-main shop-shell flex-grow-1">
+        @RenderBody()
+    </main>
+
+    @if (TempData["Message"] != null || TempData["Error"] != null)
+    {
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.onmouseenter = Swal.stopTimer;
+                        toast.onmouseleave = Swal.resumeTimer;
+                    }
+                });
+
+                @if (TempData["Message"] != null)
+                {
+                    <text>
+                    toast.fire({
+                        icon: 'success',
+                        title: '@Html.Raw(TempData["Message"])'
+                    });
+                    </text>
+                }
+                @if (TempData["Error"] != null)
+                {
+                    <text>
+                    toast.fire({
+                        icon: 'error',
+                        title: '@Html.Raw(TempData["Error"])'
+                    });
+                    </text>
+                }
+            });
+        </script>
+    }
+
+    <footer class="shop-footer">
+        <div class="container-fluid shop-shell">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="footer-brand mb-2"><i class="bi bi-bag-heart text-info me-2"></i>SV Shop</div>
+                    <p class="mb-0 small">Cửa hàng trực tuyến: mặt hàng rõ ràng, đặt mua nhanh, theo dõi đơn tiện lợi.</p>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-white fw-semibold mb-2">Khám phá</div>
+                    <ul class="list-unstyled small mb-0">
+                        <li class="mb-1"><a asp-controller="Products" asp-action="Index">Danh mục mặt hàng</a></li>
+                        <li class="mb-1"><a asp-controller="Cart" asp-action="Index">Giỏ hàng</a></li>
+                        @if (isAuth)
+                        {
+                            <li class="mb-1"><a asp-controller="Checkout" asp-action="Index">Thanh toán &amp; giao hàng</a></li>
+                            <li class="mb-1"><a asp-controller="Orders" asp-action="Index">Đơn hàng của tôi</a></li>
+                        }
+                        @if (!isAuth)
+                        {
+                            <li class="mb-1"><a asp-controller="Account" asp-action="Register">Tạo tài khoản</a></li>
+                        }
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-white fw-semibold mb-2">Hỗ trợ</div>
+                    <ul class="list-unstyled small mb-0">
+                        <li class="mb-1"><i class="bi bi-shield-check me-1"></i>Thanh toán khi nhận hàng (theo chính sách cửa hàng)</li>
+                        <li class="mb-1"><i class="bi bi-truck me-1"></i>Giao hàng toàn quốc</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="shop-footer-bottom">
+                &copy; @DateTime.Now.Year SV Shop. Thiết kế gọn – tối ưu trải nghiệm khách hàng.
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/autonumeric@4.6.0/dist/autoNumeric.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

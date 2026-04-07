@@ -1,0 +1,192 @@
+@model Product
+@section PageToolBar {
+    <button type="submit" form="formEdit" class="btn btn-primary">
+        <i class="bi bi-save"></i>
+        Lưu dữ liệu
+    </button>
+
+    <a href="~/Product" class="btn btn-secondary ms-1">
+        <i class="bi bi-arrow-left"></i>
+        Quay lại
+    </a>
+}
+
+<div class="row justify-content-center">
+    <div class="col-12">
+        @Html.ValidationMessage("Error", new { @class = "text-danger" })
+        @if (TempData["Message"] != null)
+        {
+            <div class="alert alert-info">@TempData["Message"]</div>
+        }
+        <div class="card card-primary card-outline">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-box-seam me-2"></i>
+                    Thông tin mặt hàng
+                </h5>
+            </div>
+
+            <div class="card-body">
+                <form id="formEdit" method="post" action="~/Product/SaveData" enctype="multipart/form-data">
+                    <input type="hidden" asp-for="ProductID" />
+                    <input type="hidden" asp-for="Photo" />
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">Tên mặt hàng</label>
+                        <div class="col-sm-9">
+                            <input type="text" asp-for="ProductName"
+                                   class="form-control"
+                                   placeholder="Nhập tên mặt hàng" autofocus />
+                            <span asp-validation-for="ProductName" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">Loại hàng</label>
+                        <div class="col-sm-3">
+                            <select class="form-select" asp-for="CategoryID" asp-items="await SelectListHelper.Categories()">
+                            </select>
+                            <span asp-validation-for="CategoryID" class="text-danger"></span>
+                        </div>
+
+                        <label class="col-sm-2 col-form-label text-end">Nhà cung cấp</label>
+                        <div class="col-sm-4">
+                            <select class="form-select" asp-for="SupplierID" asp-items="await SelectListHelper.Suppliers()">
+                            </select>
+                            <span asp-validation-for="SupplierID" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">Đơn vị tính</label>
+                        <div class="col-sm-3">
+                            <input type="text" asp-for="Unit"
+                                   class="form-control"
+                                   placeholder="cái, hộp, kg..." />
+                            <span asp-validation-for="Unit" class="text-danger"></span>
+                        </div>
+
+                        <label class="col-sm-2 col-form-label text-end" for="Price">Giá</label>
+                        <div class="col-sm-4">
+                            <input type="text" asp-for="Price"
+                                   class="form-control no-autonumeric"
+                                   autocomplete="off"
+                                   inputmode="decimal" />
+                            <span asp-validation-for="Price" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">Trạng thái</label>
+                        <div class="col-sm-9">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" asp-for="IsSelling"
+                                       type="checkbox"
+                                       id="IsSelling"
+                                       />
+                                <label class="form-check-label" for="IsSelling">
+                                    Đang bán
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">Ảnh</label>
+                        <div class="col-sm-9">
+                            <input type="file"
+                                   name="uploadPhoto"
+                                   class="form-control"
+                                   accept="image/*"
+                                   data-img-preview="imgPreview"
+                                   onchange="previewImage(this)" />
+                            <div class="mt-2">
+                                <img id="imgPreview"
+                                     src="~/images/products/@(string.IsNullOrWhiteSpace(Model.Photo) ? "nophoto.png" : Model.Photo)"
+                                     class="img-thumbnail"
+                                     style="max-height: 160px;" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <label class="col-sm-3 col-form-label">Mô tả</label>
+                        <div class="col-sm-9">
+                            <textarea class="form-control" asp-for="ProductDescription"
+                                      rows="3"
+                                      placeholder="Nhập mô tả mặt hàng"></textarea>
+                        </div>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@{
+    await Html.RenderPartialAsync("ListPhotos", ViewBag.ProductPhotos as List<ProductPhoto> ?? new List<ProductPhoto>());
+    await Html.RenderPartialAsync("ListAttributes", ViewBag.ProductAttributes as List<ProductAttribute> ?? new List<ProductAttribute>());
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            function onlyDigits(s) {
+                return (s || '').replace(/\D/g, '');
+            }
+           
+            function addThousandDots(s) {
+                s = (s || '').replace(/[^\d,]/g, '');
+                if (!s) return '';
+                var c = s.lastIndexOf(',');
+                var intRaw, frac = '';
+                if (c >= 0) {
+                    intRaw = onlyDigits(s.slice(0, c));
+                    frac = onlyDigits(s.slice(c + 1)).slice(0, 2);
+                } else {
+                    intRaw = onlyDigits(s);
+                }
+                if (!intRaw && !frac) return s.endsWith(',') ? ',' : '';
+                var head = intRaw ? intRaw.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
+                if (c >= 0 && !frac && s.endsWith(',')) return head + ',';
+                return head + (frac ? ',' + frac : '');
+            }
+            function toServerPrice(displayed) {
+                displayed = addThousandDots(displayed);
+                var c = displayed.lastIndexOf(',');
+                if (c >= 0) {
+                    var a = onlyDigits(displayed.slice(0, c));
+                    var b = onlyDigits(displayed.slice(c + 1));
+                    return b ? a + ',' + b : a + ',';
+                }
+                return onlyDigits(displayed);
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                var el = document.getElementById('Price');
+                var form = document.getElementById('formEdit');
+                if (!el || !form) return;
+
+                if (el.value) {
+                    var v = el.value.trim().replace(/\s/g, '');
+                    if (/^\d+\.\d{1,2}$/.test(v)) v = v.replace('.', ',');
+                    v = v.replace(/[^\d,]/g, '');
+                    var d = onlyDigits(v);
+                    if (d.length > 0 && /^0+$/.test(d)) el.value = '';
+                    else el.value = addThousandDots(v);
+                }
+
+                el.addEventListener('input', function () {
+                    this.value = addThousandDots(this.value);
+                });
+                el.addEventListener('blur', function () {
+                    if (this.value) this.value = addThousandDots(this.value);
+                });
+                form.addEventListener('submit', function () {
+                    el.value = toServerPrice(el.value);
+                }, true);
+            });
+        })();
+    </script>
+}

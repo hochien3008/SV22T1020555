@@ -1,0 +1,227 @@
+@model OrderViewInfo
+@{
+    ViewData["Title"] = $"Đơn #{Model.OrderID}";
+    var details = ViewBag.Details as List<OrderDetailViewInfo> ?? new();
+    decimal sum = details.Sum(x => x.Quantity * x.SalePrice);
+    var provinces = ViewBag.Provinces as List<Province> ?? new();
+    var deliveryPhone = (ViewBag.DeliveryPhone as string) ?? "";
+    var deliveryStreet = (ViewBag.DeliveryStreet as string) ?? "";
+    static string StatusPillClass(OrderStatusEnum s) => s switch
+    {
+        OrderStatusEnum.New => "status-pill status-pill--new",
+        OrderStatusEnum.Accepted => "status-pill status-pill--accepted",
+        OrderStatusEnum.Shipping => "status-pill status-pill--shipping",
+        OrderStatusEnum.Completed => "status-pill status-pill--completed",
+        OrderStatusEnum.Cancelled => "status-pill status-pill--cancelled",
+        OrderStatusEnum.Rejected => "status-pill status-pill--rejected",
+        _ => "status-pill"
+    };
+    static bool StepDone(OrderStatusEnum current, OrderStatusEnum step) =>
+        current == OrderStatusEnum.Completed ? step != OrderStatusEnum.Completed : (int)current >= (int)step;
+    static bool StepActive(OrderStatusEnum current, OrderStatusEnum step) =>
+        current == step;
+}
+
+<div class="shop-back-nav">
+    <a asp-action="Index" class="shop-back-link shop-back-link--smart"><i class="bi bi-arrow-left"></i><span>Quay lại</span></a>
+</div>
+<div class="shop-page-header">
+    <nav class="breadcrumb-shop">
+        <a asp-action="Index">Đơn hàng</a>
+        <span class="text-muted"> / </span>
+        <span class="text-dark">#@Model.OrderID</span>
+    </nav>
+    <h1 class="h1-line">Chi tiết đơn #@Model.OrderID</h1>
+    <p class="lead-sub mb-0"><i class="bi bi-clock me-1"></i>Đặt lúc @Model.OrderTime.ToString("dd/MM/yyyy HH:mm")</p>
+</div>
+
+
+
+<div class="order-detail-hero mb-4">
+    <div class="order-detail-hero__top">
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="order-code">#@Model.OrderID</div>
+            <span class="@StatusPillClass(Model.Status)">@Model.Status.GetDescription()</span>
+        </div>
+        <div class="order-meta">
+            <span><i class="bi bi-clock me-1"></i>@Model.OrderTime.ToString("dd/MM/yyyy HH:mm")</span>
+            <span class="order-meta__dot">•</span>
+            <span><i class="bi bi-cash-coin me-1"></i>Tổng: <strong class="text-primary">@sum.ToString("N0") đ</strong></span>
+        </div>
+    </div>
+
+    @if (Model.Status == OrderStatusEnum.Cancelled || Model.Status == OrderStatusEnum.Rejected)
+    {
+        <div class="order-stepper order-stepper--failed mt-3">
+            <div class="order-stepper__note">
+                <i class="bi bi-shield-x me-2"></i>
+                Đơn hàng @((Model.Status == OrderStatusEnum.Cancelled) ? "đã bị hủy" : "bị từ chối") — vui lòng liên hệ cửa hàng nếu cần hỗ trợ.
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="order-stepper mt-3">
+            <div class="order-step @(StepDone(Model.Status, OrderStatusEnum.New) ? "is-done" : "") @(StepActive(Model.Status, OrderStatusEnum.New) ? "is-active" : "")">
+                <div class="order-step__dot"><i class="bi bi-bag-check"></i></div>
+                <div class="order-step__text">
+                    <div class="order-step__label">Đặt hàng</div>
+                    <div class="order-step__sub">Đã tạo đơn</div>
+                </div>
+            </div>
+            <div class="order-step__line"></div>
+            <div class="order-step @(StepDone(Model.Status, OrderStatusEnum.Accepted) ? "is-done" : "") @(StepActive(Model.Status, OrderStatusEnum.Accepted) ? "is-active" : "")">
+                <div class="order-step__dot"><i class="bi bi-clipboard-check"></i></div>
+                <div class="order-step__text">
+                    <div class="order-step__label">Xác nhận</div>
+                    <div class="order-step__sub">Shop duyệt đơn</div>
+                </div>
+            </div>
+            <div class="order-step__line"></div>
+            <div class="order-step @(StepDone(Model.Status, OrderStatusEnum.Shipping) ? "is-done" : "") @(StepActive(Model.Status, OrderStatusEnum.Shipping) ? "is-active" : "")">
+                <div class="order-step__dot"><i class="bi bi-truck"></i></div>
+                <div class="order-step__text">
+                    <div class="order-step__label">Vận chuyển</div>
+                    <div class="order-step__sub">Đang giao</div>
+                </div>
+            </div>
+            <div class="order-step__line"></div>
+            <div class="order-step @(StepDone(Model.Status, OrderStatusEnum.Completed) ? "is-done" : "") @(StepActive(Model.Status, OrderStatusEnum.Completed) ? "is-active" : "")">
+                <div class="order-step__dot"><i class="bi bi-star-fill"></i></div>
+                <div class="order-step__text">
+                    <div class="order-step__label">Hoàn tất</div>
+                    <div class="order-step__sub">Giao thành công</div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card card-shop overflow-hidden">
+            <div class="card-header"><i class="bi bi-box-seam me-2 text-primary"></i>Mặt hàng</div>
+            <div class="table-responsive">
+                <table class="table table-shop mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Tên</th>
+                            <th class="text-center">SL</th>
+                            <th class="text-end">Đơn giá</th>
+                            <th class="text-end">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in details)
+                        {
+                            <tr>
+                                <td class="fw-medium">@d.ProductName</td>
+                                <td class="text-center">@d.Quantity</td>
+                                <td class="text-end text-secondary">@d.SalePrice.ToString("N0") đ</td>
+                                <td class="text-end fw-semibold">@((d.Quantity * d.SalePrice).ToString("N0")) đ</td>
+                            </tr>
+                        }
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <th colspan="3" class="text-end">Tổng cộng</th>
+                            <th class="text-end text-primary fs-5">@sum.ToString("N0") đ</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="order-info-card">
+            <div class="order-info-card__head">
+                <span><i class="bi bi-truck me-2 text-primary"></i>Giao hàng</span>
+                <span class="order-info-card__head-actions">
+                    @if (Model.Status == OrderStatusEnum.New || Model.Status == OrderStatusEnum.Accepted)
+                    {
+                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#editDeliveryModal">
+                            <i class="bi bi-pencil-square me-1"></i>Sửa
+                        </button>
+                        <form asp-action="Cancel" asp-route-id="@Model.OrderID" method="post" class="d-inline" onsubmit="return confirm('Bạn chắc chắn muốn hủy đơn này?');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                <i class="bi bi-x-circle me-1"></i>Hủy
+                            </button>
+                        </form>
+                    }
+
+                </span>
+            </div>
+            <div class="order-info-card__body">
+                <div class="order-info-row">
+                    <div class="order-info-row__label">Tỉnh / thành</div>
+                    <div class="order-info-row__value">@(string.IsNullOrWhiteSpace(Model.DeliveryProvince) ? "—" : Model.DeliveryProvince)</div>
+                </div>
+                <div class="order-info-row">
+                    <div class="order-info-row__label">Địa chỉ &amp; liên hệ</div>
+                    <div class="order-info-row__value" style="white-space: pre-line;">@(string.IsNullOrWhiteSpace(Model.DeliveryAddress) ? "—" : Model.DeliveryAddress)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.Status == OrderStatusEnum.New || Model.Status == OrderStatusEnum.Accepted)
+{
+    <div class="modal fade" id="editDeliveryModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-truck me-2 text-primary"></i>Sửa thông tin giao hàng</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form asp-action="UpdateDelivery" asp-route-id="@Model.OrderID" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <div class="alert alert-info shop-alert d-flex align-items-start gap-2" role="alert">
+                            <i class="bi bi-info-circle-fill flex-shrink-0 mt-1"></i>
+                            <div>Bạn có thể chỉnh sửa thông tin giao hàng cho đơn này trước khi giao (chỉ áp dụng khi đơn còn <strong>Vừa tạo</strong> hoặc <strong>Đã duyệt</strong>).</div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Số điện thoại nhận hàng</label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text bg-white text-muted"><i class="bi bi-telephone"></i></span>
+                                    <input name="deliveryPhone" class="form-control" value="@deliveryPhone" placeholder="VD: 0912 345 678" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold small">Tỉnh / thành</label>
+                                <select name="deliveryProvince" class="form-select form-select-lg">
+                                    <option value="">— Chọn tỉnh / thành —</option>
+                                    @foreach (var p in provinces)
+                                    {
+                                        var sel = (Model.DeliveryProvince ?? "") == p.ProvinceName;
+                                        if (sel)
+                                        {
+                                            <option value="@p.ProvinceName" selected>@p.ProvinceName</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="@p.ProvinceName">@p.ProvinceName</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold small">Địa chỉ giao hàng</label>
+                                <textarea name="deliveryAddress" class="form-control" rows="3" placeholder="Số nhà, đường, phường/xã…">@deliveryStreet</textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" class="btn btn-shop-primary rounded-pill px-4 fw-semibold">
+                            <i class="bi bi-save me-2"></i>Lưu thay đổi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
