@@ -69,9 +69,8 @@
                         <label class="col-sm-2 col-form-label text-end" for="Price">Giá</label>
                         <div class="col-sm-4">
                             <input type="text" asp-for="Price"
-                                   class="form-control no-autonumeric"
-                                   autocomplete="off"
-                                   inputmode="decimal" />
+                                   class="form-control money-input"
+                                   autocomplete="off" />
                             <span asp-validation-for="Price" class="text-danger"></span>
                         </div>
                     </div>
@@ -132,61 +131,7 @@
 @section Scripts {
     <script>
         (function () {
-            function onlyDigits(s) {
-                return (s || '').replace(/\D/g, '');
-            }
-           
-            function addThousandDots(s) {
-                s = (s || '').replace(/[^\d,]/g, '');
-                if (!s) return '';
-                var c = s.lastIndexOf(',');
-                var intRaw, frac = '';
-                if (c >= 0) {
-                    intRaw = onlyDigits(s.slice(0, c));
-                    frac = onlyDigits(s.slice(c + 1)).slice(0, 2);
-                } else {
-                    intRaw = onlyDigits(s);
-                }
-                if (!intRaw && !frac) return s.endsWith(',') ? ',' : '';
-                var head = intRaw ? intRaw.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
-                if (c >= 0 && !frac && s.endsWith(',')) return head + ',';
-                return head + (frac ? ',' + frac : '');
-            }
-            function toServerPrice(displayed) {
-                displayed = addThousandDots(displayed);
-                var c = displayed.lastIndexOf(',');
-                if (c >= 0) {
-                    var a = onlyDigits(displayed.slice(0, c));
-                    var b = onlyDigits(displayed.slice(c + 1));
-                    return b ? a + ',' + b : a + ',';
-                }
-                return onlyDigits(displayed);
-            }
-
-            document.addEventListener('DOMContentLoaded', function () {
-                var el = document.getElementById('Price');
-                var form = document.getElementById('formEdit');
-                if (!el || !form) return;
-
-                if (el.value) {
-                    var v = el.value.trim().replace(/\s/g, '');
-                    if (/^\d+\.\d{1,2}$/.test(v)) v = v.replace('.', ',');
-                    v = v.replace(/[^\d,]/g, '');
-                    var d = onlyDigits(v);
-                    if (d.length > 0 && /^0+$/.test(d)) el.value = '';
-                    else el.value = addThousandDots(v);
-                }
-
-                el.addEventListener('input', function () {
-                    this.value = addThousandDots(this.value);
-                });
-                el.addEventListener('blur', function () {
-                    if (this.value) this.value = addThousandDots(this.value);
-                });
-                form.addEventListener('submit', function () {
-                    el.value = toServerPrice(el.value);
-                }, true);
-            });
+            // Định dạng tiền cho trang Edit.cshtml đã được xử lý bởi AutoNumeric thông qua class .money-input
         })();
     </script>
 }

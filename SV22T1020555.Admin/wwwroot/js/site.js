@@ -13,67 +13,34 @@ function previewImage(input) {
 }
 
 /**
- * Logic định dạng tiền tệ (Thầy dạy): Chấm phần nghìn, Phẩy thập phân
- */
-function onlyDigits(s) {
-    return (s || '').toString().replace(/\D/g, '');
-}
-
-function addThousandDots(s) {
-    s = (s || '').toString().replace(/[^\d,]/g, '');
-    if (!s) return '';
-    var c = s.lastIndexOf(',');
-    var intRaw, frac = '';
-    if (c >= 0) {
-        intRaw = onlyDigits(s.slice(0, c));
-        frac = onlyDigits(s.slice(c + 1)).slice(0, 2);
-    } else {
-        intRaw = onlyDigits(s);
-    }
-    if (!intRaw && !frac) return s.endsWith(',') ? ',' : '';
-    var head = intRaw ? intRaw.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : '';
-    if (c >= 0 && !frac && s.endsWith(',')) return head + ',';
-    return head + (frac ? ',' + frac : '');
-}
-
-/**
- * Chuyển đổi định dạng hiển thị sang số thực để gửi về Server (1.000,50 -> 1000.5)
- */
-function toServerPrice(val) {
-    val = (val || '').toString().replace(/\s/g, '');
-    var c = val.lastIndexOf(',');
-    if (c >= 0) {
-        var a = onlyDigits(val.slice(0, c));
-        var b = onlyDigits(val.slice(c + 1));
-        return b ? a + '.' + b : a;
-    }
-    return onlyDigits(val);
-}
-
-/**
- * Khởi tạo bộ định dạng cho các input có class .money-input
+ * Khởi tạo bộ định dạng cho các input có class .money-input sử dụng AutoNumeric
  */
 window.setupMoneyInput = function(selector) {
     const elements = document.querySelectorAll(selector || '.money-input');
     elements.forEach(el => {
-        // Định dạng giá trị hiện có
-        el.value = addThousandDots(el.value);
+        // Kiểm tra xem đã khởi tạo AutoNumeric chưa
+        if (AutoNumeric.getAutoNumericElement(el)) return;
 
-        // Lắng nghe thay đổi khi gõ
-        const handler = function () {
-            let pos = this.selectionStart;
-            let oldLen = this.value.length;
-            this.value = addThousandDots(this.value);
-            let newLen = this.value.length;
-            pos = pos + (newLen - oldLen);
-            this.setSelectionRange(pos, pos);
-        };
-        el.removeEventListener('input', handler);
-        el.addEventListener('input', handler);
+        // Xóa các mốc số 0 vô nghĩa hiển thị ban đầu (do server nhét vào) để dễ nhập
+        const v = el.value.trim();
+        if (v === '0' || v === '0.00' || v === '0,00') {
+            el.value = '';
+        }
 
-        // Đảm bảo unformat trước khi submit form (Native POST)
-        if (el.form) {
-            el.form.removeEventListener('submit', unformatAllMoneyFields);
+        new AutoNumeric(el, {
+            digitGroupSeparator: '.',
+            decimalCharacter: ',',
+            allowDecimalPadding: false,
+            decimalPlaces: 2,
+            minimumValue: '0',
+            unformatOnSubmit: false, // Tắt tự động unformat để tự custom dấu phẩy
+            emptyInputBehavior: 'null',
+            selectOnFocus: true, // Tự bôi đen giá trị khi rà chuột để gõ đè lên
+            watchExternalChanges: true
+        });
+
+        if (el.form && !el.form.dataset.moneySubmitAttached) {
+            el.form.dataset.moneySubmitAttached = "true";
             el.form.addEventListener('submit', unformatAllMoneyFields);
         }
     });
@@ -81,8 +48,19 @@ window.setupMoneyInput = function(selector) {
 
 function unformatAllMoneyFields(e) {
     const form = e.currentTarget;
+    // Ngăn AutoNumeric tự format lại ngay lập tức
     form.querySelectorAll('.money-input').forEach(el => {
-        el.value = toServerPrice(el.value);
+        const an = AutoNumeric.getAutoNumericElement(el);
+        if (an) {
+            let val = an.getNumericString(); // 1000.50
+            if (val) {
+                // Đổi dấu chấm phân cách thập phân thành phẩy cho vi-VN ModelBinder 
+                val = val.replace('.', ',');
+            }
+            // Hủy instace hoặc gỡ events để tránh auto-format lại sau khi gán raw value
+            an.remove();
+            el.value = val;
+        }
     });
 }
 
@@ -98,7 +76,9 @@ window.paginationSearch = function(event, form, page) {
 
     // Unformat tiền trước khi tạo URL/Body
     form.querySelectorAll(".money-input").forEach(el => {
-        formData.set(el.name, toServerPrice(el.value));
+        const an = AutoNumeric.getAutoNumericElement(el);
+        const serverVal = an ? an.getNumericString() : el.value;
+        formData.set(el.name, serverVal);
     });
 
     let fetchUrl = url;
